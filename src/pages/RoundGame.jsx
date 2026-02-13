@@ -55,19 +55,6 @@ export default function RoundGame() {
     ));
   };
 
-  // ✅ Chốt 1 ván
-  const commitRound = (id) => {
-    setPlayers(players.map(p => {
-      if (p.id !== id) return p;
-      if (p.currentMoney === 0) return p;
-
-      return {
-        ...p,
-        currentMoney: 0,
-        rounds: [...p.rounds, p.currentMoney], // ✅ giữ toàn bộ
-      };
-    }));
-  };
 
 
   const removePlayer = (player) => {
