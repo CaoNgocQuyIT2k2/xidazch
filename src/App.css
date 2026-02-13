@@ -1,38 +1,156 @@
-.App {
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f4f6;
+}
+
+.container {
+  max-width: 480px;
+  margin: auto;
+  padding: 16px;
+}
+
+h2 {
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.card {
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+label {
+  font-size: 14px;
+  color: #555;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+}
+
+.total {
+  background: #023e88;
+  color: white;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.players {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.player-row {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  gap: 8px;
+  background: white;
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.player-name {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.money {
+  min-width: 80px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.player-row button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: #3565a0;
   color: white;
+  font-size: 18px;
+  cursor: pointer;
 }
 
-.App-link {
-  color: #61dafb;
+.player-row button:active {
+  transform: scale(0.95);
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.remove {
+  background: crimson !important;
+}
+
+.add-btn {
+  margin-top: 20px;
+  margin-bottom: 50px;
+}
+.settle-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #16a34a;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.history {
+  margin-top: 16px;
+  background: white;
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.history-card {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  font-size: 14px;
+}
+
+.history-time {
+  font-size: 12px;
+  color: gray;
+  margin-bottom: 6px;
+}
+
+.history-dealer {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.history-player {
+  padding-left: 6px;
+}
+
+.empty {
+  padding: 10px;
+  text-align: center;
+  color: gray;
+}
+
+.clear-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: crimson;
+  color: white;
 }
