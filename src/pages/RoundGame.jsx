@@ -7,6 +7,29 @@ export default function RoundGame() {
   const [resultPopup, setResultPopup] = useState(null);
   const [history, setHistory] = useState([]);
   const navigate = useNavigate();
+  const [multiplier, setMultiplier] = useState(1);
+
+  const [playersLoaded, setPlayersLoaded] = useState(false);
+  const [players, setPlayers] = useState([
+    { id: 1, name: "", currentMoney: 0, rounds: [] },
+  ]);
+  useEffect(() => {
+    try {
+      const savedPlayers = localStorage.getItem("xi_dach_players");
+
+      if (savedPlayers) {
+        setPlayers(JSON.parse(savedPlayers));
+      }
+
+    } catch (e) {
+      console.warn("Players storage corrupted");
+    }
+
+    setPlayersLoaded(true); // QUAN TRỌNG
+  }, []);
+
+
+
 
   useEffect(() => {
     const saved = localStorage.getItem("xi_dach_history");
@@ -16,14 +39,18 @@ export default function RoundGame() {
   }, []);
 
   const saveHistory = (data) => {
-    const newHistory = [data, ...history];
-    setHistory(newHistory);
+    setHistory(prev => {
+      const newHistory = [data, ...prev];
 
-    localStorage.setItem(
-      "xi_dach_history",
-      JSON.stringify(newHistory)
-    );
+      localStorage.setItem(
+        "xi_dach_history",
+        JSON.stringify(newHistory)
+      );
+
+      return newHistory;
+    });
   };
+
 
   const clearHistory = () => {
     const ok = window.confirm("Xoá toàn bộ lịch sử?");
@@ -31,12 +58,28 @@ export default function RoundGame() {
 
     localStorage.removeItem("xi_dach_history");
     setHistory([]);
+
+    // reset tiền nhưng giữ players
+    setPlayers(prev =>
+      prev.map(p => ({
+        ...p,
+        currentMoney: 0,
+        rounds: [],
+      }))
+    );
   };
 
-  const [players, setPlayers] = useState([
-    { id: 1, name: "", currentMoney: 0, rounds: [] },
-  ]);
 
+
+
+  useEffect(() => {
+    if (!playersLoaded) return;
+
+    localStorage.setItem(
+      "xi_dach_players",
+      JSON.stringify(players)
+    );
+  }, [players, playersLoaded]);
   const addPlayer = () => {
     setPlayers([
       ...players,
@@ -45,18 +88,12 @@ export default function RoundGame() {
   };
 
   const updatePlayer = (id, field, value) => {
-    setPlayers(players.map(p =>
-      p.id === id ? { ...p, [field]: value } : p
-    ));
+    setPlayers(prev =>
+      prev.map(p =>
+        p.id === id ? { ...p, [field]: value } : p
+      )
+    );
   };
-
-  const changeMoney = (id, amount) => {
-    setPlayers(players.map(p =>
-      p.id === id ? { ...p, currentMoney: p.currentMoney + amount } : p
-    ));
-  };
-
-
 
   const removePlayer = (player) => {
     const ok = window.confirm(
@@ -64,8 +101,26 @@ export default function RoundGame() {
     );
     if (!ok) return;
 
-    setPlayers(players.filter(p => p.id !== player.id));
+    setPlayers(prev => prev.filter(p => p.id !== player.id));
   };
+
+
+  const changeMoney = (id, amount) => {
+    const realAmount = amount * multiplier;
+
+    setPlayers(prev =>
+      prev.map(p =>
+        p.id === id
+          ? { ...p, currentMoney: p.currentMoney + realAmount }
+          : p
+      )
+    );
+  };
+
+
+
+
+
 
   const commitAllRounds = () => {
     const ok = window.confirm("Chốt ván hiện tại?");
@@ -75,32 +130,38 @@ export default function RoundGame() {
       time: new Date().toLocaleTimeString(),
       players: players.map(p => ({
         name: p.name || "Chưa đặt tên",
-        money: p.currentMoney, // ✅ lưu đúng tiền ván đó
+        money: p.currentMoney,
       })),
     };
 
-    saveHistory(roundSnapshot); // ✅ LƯU NGAY TỪNG VÁN
+    saveHistory(roundSnapshot);   // ✅ gọi OUTSIDE
 
-    setPlayers(players.map(p => ({
-      ...p,
-      currentMoney: 0,
-      rounds: [...p.rounds, p.currentMoney], // vẫn giữ UI 5 ván
-    })));
+    setPlayers(prev =>
+      prev.map(p => ({
+        ...p,
+        currentMoney: 0,
+        rounds: [...p.rounds, p.currentMoney],
+      }))
+    );
   };
+
 
 
 
 
   const resetBoard = () => {
-    const ok = window.confirm("Reset toàn bộ lịch sử?");
+    const ok = window.confirm("Reset toàn bộ?");
     if (!ok) return;
 
-    setPlayers(players.map(p => ({
-      ...p,
-      currentMoney: 0,
-      rounds: [],
-    })));
+    localStorage.removeItem("xi_dach_history");
+    localStorage.removeItem("xi_dach_players");
+
+    setHistory([]);
+    setPlayers([
+      { id: 1, name: "", currentMoney: 0, rounds: [] },
+    ]);
   };
+
 
   const handleSettlement = () => {
     const ok = window.confirm("Bạn có muốn tổng kết sòng không?");
@@ -148,17 +209,8 @@ export default function RoundGame() {
     if (value > 0) return `Nhận ${value.toLocaleString()} đ`;
     return `Trả ${Math.abs(value).toLocaleString()} đ`;
   };
-  const groupedHistory = {};
 
-  history.forEach(round => {
-    round.players.forEach(p => {
-      if (!groupedHistory[p.name]) {
-        groupedHistory[p.name] = [];
-      }
 
-      groupedHistory[p.name].push(p.money);
-    });
-  });
 
   return (
     <div className="container">
@@ -175,7 +227,18 @@ export default function RoundGame() {
           onChange={(e) => setDealer(e.target.value)}
           placeholder="Nhập tên chủ sòng"
         />
+
       </div>
+      <div className="card">
+        <label>Hệ số cược</label>
+        <input
+          type="number"
+          value={multiplier}
+          onChange={(e) => setMultiplier(Number(e.target.value) || 1)}
+          placeholder="Ví dụ 5"
+        />
+      </div>
+
       <button className="commit-all-btn" onClick={commitAllRounds}>
         ✔ CHỐT VÁN
       </button>
@@ -247,34 +310,23 @@ export default function RoundGame() {
           <div className="empty">Chưa có lịch sử</div>
         )}
 
-        {Object.entries(groupedHistory).map(([name, rounds]) => {
-          const total = rounds.reduce((sum, r) => sum + r, 0);
+        {history.map((round, idx) => (
+          <div key={idx} className="history-card">
 
-          return (
-            <div key={name} className="history-card">
+            <div><b>🕒 {round.time}</b></div>
 
-              <div className="history-line">
-                <b>✔ {name}:</b>
+            {round.dealer && (
+              <div>🎯 {round.dealer}: {renderMoney(round.dealerMoney)}</div>
+            )}
 
-                <span className="round-array">
-                  {rounds.map((r, i) => (
-                    <span key={i}>
-                      {i !== 0 && ", "}
-                      {r.toLocaleString()}
-                    </span>
-                  ))}
-
-                </span>
+            {round.players.map((p, i) => (
+              <div key={i}>
+                • {p.name}: {p.money.toLocaleString()}
               </div>
+            ))}
 
-              <div className="round-total">
-                ✔ Tổng: <b>{total.toLocaleString()}</b>
-              </div>
-
-            </div>
-          );
-        })}
-
+          </div>
+        ))}
 
         {history.length > 0 && (
           <button className="clear-btn" onClick={clearHistory}>
@@ -282,6 +334,7 @@ export default function RoundGame() {
           </button>
         )}
       </details>
+
 
 
 
