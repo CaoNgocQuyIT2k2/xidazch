@@ -13,7 +13,7 @@ export default function TotalGame() {
     const [resultPopup, setResultPopup] = useState(null);
 
     useEffect(() => {
-        const saved = sessionStorage.getItem("xi_dach_total_history");
+        const saved = localStorage.getItem("xi_dach_total_history");
 
         if (saved) {
             setHistory(JSON.parse(saved));
@@ -26,7 +26,7 @@ export default function TotalGame() {
 
         setHistory(newHistory);
 
-        sessionStorage.setItem(
+        localStorage.setItem(
             "xi_dach_total_history",
             JSON.stringify(newHistory)
         );
@@ -37,7 +37,7 @@ export default function TotalGame() {
         const ok = window.confirm("Xoá lịch sử chế độ TÍNH TỔNG?");
         if (!ok) return;
 
-        sessionStorage.removeItem("xi_dach_total_history");
+        localStorage.removeItem("xi_dach_total_history");
         setHistory([]);
     };
 

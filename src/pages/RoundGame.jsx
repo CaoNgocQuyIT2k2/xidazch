@@ -9,16 +9,17 @@ export default function RoundGame() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = sessionStorage.getItem("xi_dach_history");
+    const saved = localStorage.getItem("xi_dach_history");
     if (saved) {
       setHistory(JSON.parse(saved));
     }
   }, []);
+
   const saveHistory = (data) => {
     const newHistory = [data, ...history];
     setHistory(newHistory);
 
-    sessionStorage.setItem(
+    localStorage.setItem(
       "xi_dach_history",
       JSON.stringify(newHistory)
     );
@@ -28,7 +29,7 @@ export default function RoundGame() {
     const ok = window.confirm("Xoá toàn bộ lịch sử?");
     if (!ok) return;
 
-    sessionStorage.removeItem("xi_dach_history");
+    localStorage.removeItem("xi_dach_history");
     setHistory([]);
   };
 
