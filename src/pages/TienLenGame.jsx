@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function TienLenGame() {
@@ -14,67 +14,79 @@ export default function TienLenGame() {
   const [history, setHistory] = useState([]);
   const [resultPopup, setResultPopup] = useState(null);
 
-  // load history
+  // ================= LOAD HISTORY =================
   useEffect(() => {
-    const saved = localStorage.getItem("tienlen_history");
-    if (saved) setHistory(JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem("tienlen_history");
+      if (saved) setHistory(JSON.parse(saved));
+    } catch {
+      console.warn("History corrupted");
+    }
   }, []);
 
   const saveHistory = (data) => {
-    setHistory(prev => {
+    setHistory((prev) => {
       const newHistory = [data, ...prev];
       localStorage.setItem("tienlen_history", JSON.stringify(newHistory));
       return newHistory;
     });
   };
 
-  // update tiền
+  // ================= UPDATE =================
   const changeMoney = (id, amount) => {
-    setPlayers(prev =>
-      prev.map(p =>
+    setPlayers((prev) =>
+      prev.map((p) =>
         p.id === id ? { ...p, money: p.money + amount } : p
       )
     );
   };
 
   const updateName = (id, value) => {
-    setPlayers(prev =>
-      prev.map(p =>
+    setPlayers((prev) =>
+      prev.map((p) =>
         p.id === id ? { ...p, name: value } : p
       )
     );
   };
 
-  // 🔥 AUTO tính người thứ 4 nếu chỉ nhập 3 người
-  const autoBalance = () => {
-    const filledPlayers = players.filter(p => p.name.trim() !== "");
+  // ================= AUTO BALANCE =================
+  const autoBalance = useCallback(() => {
+    const filled = players.filter((p) => p.name.trim() !== "");
+    const empty = players.find((p) => p.name.trim() === "");
 
-    if (filledPlayers.length === 3) {
-      const total = filledPlayers.reduce((sum, p) => sum + p.money, 0);
+    // chỉ auto khi đúng 3 người và người thứ 4 chưa có tiền
+    if (filled.length === 3 && empty && empty.money === 0) {
+      const total = filled.reduce((sum, p) => sum + p.money, 0);
 
-      const emptyPlayer = players.find(p => p.name.trim() === "");
+      // tránh set lại nếu đã đúng rồi
+      if (empty.money === -total) return;
 
-      if (emptyPlayer) {
-        setPlayers(prev =>
-          prev.map(p =>
-            p.id === emptyPlayer.id
-              ? { ...p, name: "Người 4", money: -total }
-              : p
-          )
-        );
-      }
+      setPlayers((prev) =>
+        prev.map((p) =>
+          p.id === empty.id
+            ? { ...p, name: "Người 4", money: -total }
+            : p
+        )
+      );
     }
-  };
+  }, [players]);
 
   useEffect(() => {
     autoBalance();
-  }, [players]);
+  }, [autoBalance]);
 
-  // lưu ván
+  // ================= CHỐT VÁN =================
   const commitRound = () => {
+    const total = players.reduce((sum, p) => sum + p.money, 0);
+
+    if (total !== 0) {
+      alert("⚠️ Tổng tiền phải = 0");
+      return;
+    }
+
     const snapshot = {
       time: new Date().toLocaleTimeString(),
-      players: players.map(p => ({
+      players: players.map((p) => ({
         name: p.name || "Chưa đặt tên",
         money: p.money,
       })),
@@ -82,29 +94,30 @@ export default function TienLenGame() {
 
     saveHistory(snapshot);
 
-    setPlayers(prev =>
-      prev.map(p => ({
+    // reset tiền
+    setPlayers((prev) =>
+      prev.map((p) => ({
         ...p,
         money: 0,
       }))
     );
   };
 
-  // tổng kết
+  // ================= TỔNG KẾT =================
   const handleSettlement = () => {
-    let total = 0;
+    const total = players.reduce((sum, p) => sum + p.money, 0);
 
-    const result = players.map(p => {
-      total += p.money;
-      return {
-        name: p.name || "Chưa đặt tên",
-        money: p.money,
-      };
-    });
+    if (total !== 0) {
+      alert("⚠️ Tổng tiền chưa cân bằng!");
+      return;
+    }
 
     const snapshot = {
       time: new Date().toLocaleString(),
-      players: result,
+      players: players.map((p) => ({
+        name: p.name || "Chưa đặt tên",
+        money: p.money,
+      })),
     };
 
     saveHistory(snapshot);
@@ -117,39 +130,62 @@ export default function TienLenGame() {
     return `Trả ${Math.abs(value).toLocaleString()} đ`;
   };
 
+  // ================= UI =================
   return (
     <div className="container">
-      <button onClick={() => navigate("/")}>⬅ Back</button>
+      <button className="back-btn" onClick={() => navigate("/")}>
+        ⬅ Back
+      </button>
 
       <h2>🃏 Tiến Lên</h2>
 
       <div className="players">
-        {players.map(player => (
+        {players.map((player) => (
           <div key={player.id} className="player-block">
             <input
+              className="player-name"
               value={player.name}
-              onChange={(e) => updateName(player.id, e.target.value)}
+              onChange={(e) =>
+                updateName(player.id, e.target.value)
+              }
               placeholder="Tên người chơi"
             />
 
-            <div>
-              <button onClick={() => changeMoney(player.id, -1000)}>−</button>
-              <span>{player.money.toLocaleString()}</span>
-              <button onClick={() => changeMoney(player.id, 1000)}>+</button>
+            <div className="money-row">
+              <button onClick={() => changeMoney(player.id, -1000)}>
+                −
+              </button>
+
+              <span className="money">
+                {player.money.toLocaleString()}
+              </span>
+
+              <button onClick={() => changeMoney(player.id, 1000)}>
+                +
+              </button>
             </div>
           </div>
         ))}
       </div>
 
-      <button onClick={commitRound}>✔ CHỐT VÁN</button>
-      <button onClick={handleSettlement}>💰 TỔNG KẾT</button>
+      <button className="commit-btn" onClick={commitRound}>
+        ✔ CHỐT VÁN
+      </button>
+
+      <button className="settle-btn" onClick={handleSettlement}>
+        💰 TỔNG KẾT
+      </button>
 
       {/* HISTORY */}
-      <details>
+      <details className="history">
         <summary>📜 Lịch sử</summary>
 
+        {history.length === 0 && (
+          <div>Chưa có lịch sử</div>
+        )}
+
         {history.map((round, idx) => (
-          <div key={idx}>
+          <div key={idx} className="history-card">
             <b>{round.time}</b>
 
             {round.players.map((p, i) => (
@@ -163,18 +199,28 @@ export default function TienLenGame() {
 
       {/* POPUP */}
       {resultPopup && (
-        <div className="popup">
-          <h3>Kết quả</h3>
+        <div
+          className="popup-overlay"
+          onClick={() => setResultPopup(null)}
+        >
+          <div
+            className="popup"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>🏆 KẾT QUẢ</h3>
 
-          {resultPopup.players.map((p, i) => (
-            <div key={i}>
-              {p.name}: {renderMoney(p.money)}
-            </div>
-          ))}
+            {resultPopup.players.map((p, i) => (
+              <div key={i}>
+                {p.name}: {renderMoney(p.money)}
+              </div>
+            ))}
 
-          <button onClick={() => setResultPopup(null)}>Đóng</button>
+            <button onClick={() => setResultPopup(null)}>
+              Đóng
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
-      }
+            }
