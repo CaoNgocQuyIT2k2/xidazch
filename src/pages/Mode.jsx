@@ -5,14 +5,19 @@ export default function Mode() {
 
   return (
     <div className="mode-screen">
-      <h2>🃏 Xì Dách</h2>
+      <h2>🃏 Game tính tiền</h2>
 
       <button onClick={() => navigate("/round")}>
-        🎯 Tính từng ván
+        🎯 Xì Dách (từng ván)
       </button>
 
       <button onClick={() => navigate("/total")}>
-        💰 Tính tổng sòng
+        💰 Xì Dách (tổng)
+      </button>
+
+      {/* ✅ thêm cái này */}
+      <button onClick={() => navigate("/tienlen")}>
+        🃏 Tiến Lên
       </button>
     </div>
   );
